@@ -1,5 +1,7 @@
 import pyodbc
+import csv
 import time
+import matplotlib.pyplot as plt
 
 def conectar_base_datos(server, database, username, password):
     # Cadena de conexión
@@ -48,16 +50,18 @@ def mostrar_verbos_por_letra(cursor):
 
     try:
         # Ejemplo de consulta para obtener los verbos que empiecen con la letra ingresada
-        cursor.execute(f"SELECT Infinitivo FROM irregulares WHERE Infinitivo LIKE '{letra}%'")
+        cursor.execute(f"SELECT Codigo, Infinitivo, Pasado_Simple, Participio_Pasado, Traduccion FROM irregulares WHERE Infinitivo LIKE '{letra}%'")
 
         # Mostrar los resultados
-        print(f"\nVerbos en infinitivo que empiezan con la letra '{letra}':\n")
+        print(f"\nVerbos en infinitivo que empiezan con la letra '{letra}':\n\n")
+        print("{:<10} {:<20} {:<20} {:<20} {:<20}".format('Codigo', 'Infinitivo', 'Pasado_Simple', 'Participio_Pasado', 'Traduccion'))
+        print("="*90)
         for row in cursor.fetchall():
-            print(row.Infinitivo)
+            print("{:<10} {:<20} {:<20} {:<20} {:<20}".format(row.Codigo, row.Infinitivo, row.Pasado_Simple, row.Participio_Pasado, row.Traduccion))
 
     except Exception as e:
         print(f'Error al recuperar y mostrar los verbos: {e}')
-    time.sleep(2)
+    time.sleep(4)
 
 def mostrar_cantidad_letras_en_verbos(cursor):
     letra = input("\nIngrese una letra\n\n>> ")
@@ -74,6 +78,28 @@ def mostrar_cantidad_letras_en_verbos(cursor):
     except Exception as e:
         print(f'Error al recuperar y mostrar la cantidad de letras: {e}')
     time.sleep(2)
+
+def read_csv(cursor, path):
+    try:
+        with open(path, 'r', encoding='utf-8') as csvfile:
+            reader = csv.reader(csvfile, delimiter=',')
+            for row in reader:
+                print('***' * 5)
+                print(row)
+
+    except Exception as e:
+        print(f'Error al leer el archivo CSV: {e}')
+
+
+def MostrarGrafica():
+    labels = ['AC Milan','AL Nassr','Atletico Madrid','Borussia Dortmund','Liverpool F.C','River Plate']
+    values = [100,200,60,300,20,200]
+
+    fig, ax = plt.subplots()
+    ax.bar(labels, values)
+    plt.show()
+
+
 
 def mostrar_verbos_longitud(cursor):
     try:
@@ -133,9 +159,11 @@ def menu_principal():
     print("3. Mostrar Cantidad de Letras en Verbos")
     print("4. Mostrar Verbos por Longitud")
     print("5. Agregar Nuevo Verbo")
+    print("6. Leer csv")
+    print("7. Mostrar Grafica")
     print("0. Salir")
 
-def main():
+if __name__ == '__main__':
     # Ingresa tus propios valores aquí
     server = 'LAPTOP-59IDB8MH'
     database = 'ingles'
@@ -146,34 +174,40 @@ def main():
     connection, cursor = conectar_base_datos(server, database, username, password)
 
     if connection is None or cursor is None:
-        return
+        print("Error al conectar a la base de datos. Saliendo del programa.")
+    else:
+        try:
+            while True:
+                # Mostrar el menú
+                menu_principal()
 
-    while True:
-        # Mostrar el menú
-        menu_principal()
+                # Solicitar la elección del usuario
+                opcion = input(f"\n>> ")
 
-        # Solicitar la elección del usuario
-        opcion = input(f"\n>> ")
-
-        # Procesar la elección del usuario
-        if opcion == '1':
-            mostrar_lista_completa(cursor)
-        elif opcion == '2':
-            mostrar_verbos_por_letra(cursor)
-        elif opcion == '3':
-            mostrar_cantidad_letras_en_verbos(cursor)
-        elif opcion == '4':
-            mostrar_verbos_longitud(cursor)
-        elif opcion == '5':
-            agregar_verbo(cursor)
-        elif opcion == '0':
-            # Cerrar la conexión y salir del programa
+                # Procesar la elección del usuario
+                if opcion == '1':
+                    mostrar_lista_completa(cursor)
+                elif opcion == '2':
+                    mostrar_verbos_por_letra(cursor)
+                elif opcion == '3':
+                    mostrar_cantidad_letras_en_verbos(cursor)
+                elif opcion == '4':
+                    mostrar_verbos_longitud(cursor)
+                elif opcion == '5':
+                    agregar_verbo(cursor)
+                elif opcion == '6':
+                    # Llamar a la función read_csv solo cuando se elige la opción 6
+                    read_csv(cursor, './app/Soccer_Data.csv')
+                elif opcion == '7':
+                    MostrarGrafica()
+                elif opcion == '0':
+                    print("Saliendo del programa. ¡Hasta luego!")
+                    break
+                else:
+                    print("Opción no válida. Por favor, ingrese una opción válida.")
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            # Cerrar la conexión al finalizar
             cursor.close()
             connection.close()
-            print("Saliendo del programa. ¡Hasta luego!")
-            break
-        else:
-            print("Opción no válida. Por favor, ingrese una opción válida.")
-
-if __name__ == "__main__":
-    main()
